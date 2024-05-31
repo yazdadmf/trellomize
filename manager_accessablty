@@ -1,0 +1,140 @@
+import os
+import time
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+employees_file_path = os.path.join(current_dir, "Employees.txt")
+projects_file_path = os.path.join(current_dir, "dataprojects.txt")
+
+def update_condition(file_path, new_condition):
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    for i, line in enumerate(lines):
+        if line.strip().startswith("(condition:"):
+            lines[i] = f"(condition: {new_condition})\n"
+
+    with open(file_path, "w") as file:
+        file.writelines(lines)
+
+def conditions():
+    with open(projects_file_path, "r") as file:
+        lines = file.readlines()
+
+    for line in lines:
+        if line.strip().startswith("Project Name:"):
+            print(line.strip())
+        elif line.strip().startswith("(condition:"):
+            print(line.strip())
+
+    if "asked" in "".join(lines):
+        update_condition(projects_file_path,"TODO")
+    if "admin: done" in "".join(lines):
+        update_condition(projects_file_path,"DONE")
+    if "manager: done" in "".join(lines):
+        update_condition(projects_file_path,"ARCHIVED")
+
+    # print(get_condition_from_file(projects_file_path))
+
+    
+    
+def clear_txt_files(folder_path):
+    txt_files = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith(".txt") and file != "manager.txt"]
+
+    if txt_files:
+        print("Text files found:")
+        for i, file_path in enumerate(txt_files):
+            print(f"{i+1}. {os.path.basename(file_path)}")
+
+        choice = input("Do you want to clear the contents of these text files? (y/n) ")
+        if choice.lower() == 'y':
+            for file_path in txt_files:
+                if os.path.basename(file_path) != "managers.txt":
+                    with open(file_path, 'w') as file:
+                        file.truncate()
+            print("Text files cleared successfully.")
+        else:
+            print("Text files not cleared.")
+    else:
+        print("No text files found in the specified folder.")
+
+
+def print_usernames_from_file(file_path):
+    with open(file_path, "r") as file:
+        for line in file:
+            if line.startswith("employee username:"):
+                username = line.split(": ")[1].strip()
+                print(username)
+                
+def disable_employee():
+    with open(employees_file_path, "r") as file:
+        data = file.readlines()
+    print("All Usernames:")
+    print_usernames_from_file(employees_file_path)
+    print("List of Disabled Employees:")
+    for line in range(0, len(data), 2):
+        if data[line + 1].startswith("employee password: DISABLED"):
+            username = data[line].replace("employee username: ", "").strip()
+            print(f"- {username}")
+            time.sleep(0.5)
+    
+    username = input("Enter the username of the employee to disable: ")
+    
+    with open(employees_file_path, "r") as file:
+        data = file.readlines()
+    
+    with open(employees_file_path, "w") as file:
+        disabled = False
+        for line in range(0, len(data), 2):
+            if "employee username: " + username + "\n" == data[line]:
+                file.write("employee username: " + username + "\n")
+                file.write("employee password: DISABLED\n")
+                disabled = True
+            else:
+                file.write(data[line])
+                file.write(data[line + 1])
+        
+        if disabled:
+            print(f"Employee '{username}' account has been disabled.")
+            time.sleep(0.5)
+        else:
+            print(f"Employee '{username}' not found.")
+            time.sleep(0.5)
+
+def enable_employee():
+    with open(employees_file_path, "r") as file:
+        data = file.readlines()
+    
+    print("List of Disabled Employees:")
+    for line in range(0, len(data), 2):
+        if data[line + 1].startswith("employee password: DISABLED"):
+            username = data[line].replace("employee username: ", "").strip()
+            print(f"- {username}")
+            time.sleep(0.5)
+    
+    username = input("Enter the username of the employee to enable: ")
+    
+    with open(employees_file_path, "r") as file:
+        data = file.readlines()
+    
+    with open(employees_file_path, "w") as file:
+        enabled = False
+        for line in range(0, len(data), 2):
+            if "employee username: " + username + "\n" == data[line]:
+                if data[line + 1].startswith("employee password: DISABLED"):
+                    file.write(data[line])
+                    password = input(f"Enter the new password for {username}: ")
+                    file.write("employee password: " + password + "\n")
+                    enabled = True
+                else:
+                    file.write(data[line])
+                    file.write(data[line + 1])
+            else:
+                file.write(data[line])
+                file.write(data[line + 1])
+        
+        if enabled:
+            print(f"Employee '{username}' account has been enabled.")
+            time.sleep(0.5)
+        else:
+            print(f"Employee '{username}' not found or not disabled.")
+            time.sleep(0.5)
