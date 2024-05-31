@@ -1,0 +1,133 @@
+import os
+import time
+import hashlib
+import admins
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+employees_file_path = os.path.join(current_dir, "Employees.txt")
+logging_file_path = os.path.join(current_dir, "logging.txt")
+projects_file_path = os.path.join(current_dir, "dataprojects.txt")
+
+def check_username(username):
+    with open(employees_file_path, "r") as file:
+        for line in file:
+            if line.strip().startswith("employee username: " + username):
+                if "admin" in line:
+                    return "admin"
+                else:
+                    return "emp"
+    return None
+
+def create_file_if_not_exists(file_path):
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as file:
+            pass
+
+def is_valid_email(email):
+    if email.endswith("@gmail.com") or email.endswith("@yahoo.com"):
+        username_part = email.split("@")[0]
+        if username_part:
+            return True
+    return False
+
+def sign_up():
+    choice = input("Sign up with:\n1. Username\n2. Email\n3.Exit\nChoose an option: ")
+    if choice == "1":
+        username = input("Enter your desired username: ").strip()
+        with open(employees_file_path, "r") as file:
+            data = file.readlines()
+            for line in range(0, len(data), 2):
+                if "employee username: " + username + "\n" == data[line]:
+                    print("Error: Username already taken. Please choose a different username.")
+                    return
+        password = input("Enter your desired password: ").strip()
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        with open(employees_file_path, "a") as file:
+            file.write("employee username: " + username + "\n")
+            file.write("employee password: " + hashed_password + "\n")
+        print("Sign up successful Wait for manager decision.")
+    elif choice == "2":
+        email = input("Enter your email (must be {name + @gmail.com} or {name + @yahoo.com}): ").strip()
+        if not is_valid_email(email):
+            print("Invalid email format. Please use {name + @gmail.com} or {name + @yahoo.com} ")
+            return
+        username = email.split("@")[0]
+        password = input("Enter your desired password: ").strip()
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        with open(employees_file_path, "a") as file:
+            file.write("employee username: " + username + "\n")
+            file.write("employee email: " + email + "\n")
+            file.write("employee password: " + hashed_password + "\n")
+        print("Sign up successful Wait for manager decision.")
+    elif choice == "3":
+        print("Exiting...")
+        exit()
+    else:
+        print("Invalid choice. Please try again.")
+
+def log_in():
+    identifier = input("Enter your username or email: ").strip()
+    password = input("Enter your password: ").strip()
+
+    with open(employees_file_path, "r") as file:
+        data = file.readlines()
+        for line in range(0, len(data), 2):
+            if ("employee username: " + identifier == data[line].strip() or 
+                "employee email: " + identifier == data[line].strip()) and "employee password: " + hashlib.sha256(password.encode()).hexdigest() == data[line + 1].strip():
+                print("Login successful!")
+                with open(logging_file_path, "a") as log_file:
+                    log_file.write(f"{time.ctime()}: {identifier} logged in\n")
+                return identifier
+        for line in data:
+            if ("employee username: " + identifier + " admin:" in line.strip() or 
+                "employee email: " + identifier + " admin:" in line.strip()):
+                print("Login successful!\nHi admin!")
+                with open(logging_file_path, "a") as log_file:
+                    log_file.write(f"{time.ctime()}: {identifier} logged in\n")
+                return identifier
+        print("Invalid username/email or password. Please try again.")
+    return None
+
+def list_user_projects(username):
+    print(f"Projects for {username}:")
+    with open(projects_file_path, "r") as file:
+        in_project = False
+        project_details = []
+        for line in file:
+            if "Project Name:" in line:
+                project_details = [line.strip()]
+                in_project = True
+            elif in_project:
+                project_details.append(line.strip())
+                if "Budget:" in line:
+                    in_project = False
+                    if f"Project admin: {username}" in project_details or any(f"{username}" in task for task in project_details if "Tasks:" in task):
+                        for detail in project_details:
+                            print(detail)
+                        print("-" * 50)
+                    project_details = []
+
+def manage_employees():
+    create_file_if_not_exists(employees_file_path)
+    create_file_if_not_exists(logging_file_path)
+
+    while True:
+        choice = input("Choose an option:\n1. Sign Up \n2. Log In \n3. Exit: ").strip()
+        if choice == "1":
+            sign_up()
+        elif choice == "2":
+            username = log_in()
+            if username:
+                role = check_username(username.split('@')[0] if '@' in username else username)
+                if role == "admin":
+                    admins.main(username)
+                else:
+                    return
+        elif choice == "3":
+            print("Exiting...")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    manage_employees()
