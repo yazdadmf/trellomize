@@ -1,0 +1,82 @@
+import unittest
+from unittest.mock import patch, mock_open, call
+import os
+import manager_accessablty
+import manager
+import Employees
+import new_project_maker
+import view_projects
+import edit_projects
+
+class TestYourFunctions(unittest.TestCase):
+
+    @patch('builtins.open', new_callable=mock_open, read_data='manager username: admin\nmanager password: admin\n')
+    def test_manage_managers_login_success(self, mock_file):
+        with patch('builtins.input', side_effect=['admin', 'admin']):
+            with patch('time.sleep', return_value=None):
+                manager.manage_managers()
+                self.assertTrue(Employees.login)
+
+    @patch('builtins.open', new_callable=mock_open, read_data='Project Name: Test Project\n(condition: BACKLOG)\n')
+    def test_projects_edit(self, mock_file):
+        with patch('builtins.input', side_effect=['1', 'Project Name', 'New Project Name', 'q']):
+            with patch('time.sleep', return_value=None):
+                edit_projects.Projects_edit('dummy_path')
+                mock_file().write.assert_any_call('Project Name: New Project Name\n')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='employee username: user\n')
+    def test_add_admin_to_username(self, mock_file):
+        new_project_maker.add_admin_to_username('user', 'Test Project', 'dummy_path')
+        mock_file().write.assert_any_call('employee username: user\n')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='employee username: user\n')
+    def test_print_usernames_from_file(self, mock_file):
+        with patch('builtins.print') as mock_print:
+            new_project_maker.print_usernames_from_file('dummy_path')
+            mock_print.assert_called_with('user')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='Project Manager: John Doe\nProject Name: Test Project\nProject Description: Sample\nProject admin: admin\nStart Date: 2024-01-01\nEnd Date/Deadline: 2024-12-31\nTasks: task1, task2\nBudget: 1000\n(condition: BACKLOG)\n')
+    @patch('os.makedirs', return_value=None)
+    @patch('os.path.exists', return_value=False)
+    def test_save_project_details(self, mock_file, mock_makedirs, mock_exists):
+        project_details = {
+            "Project Manager": "John Doe\n",
+            "Project Name": "Test Project\n",
+            "Project Description": "Sample\n",
+            "Project admin": "admin\n",
+            "Start Date": "2024-01-01\n",
+            "End Date/Deadline": "2024-12-31\n",
+            "Tasks": "task1, task2\n",
+            "Budget": "1000\n",
+            "(condition: BACKLOG)": "\n"
+        }
+        new_project_maker.save_project_details(project_details)
+        mock_file().write.assert_any_call('Project Manager: John Doe\n')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='(condition: BACKLOG)\n')
+    def test_update_condition(self, mock_file):
+        manager_accessablty.update_condition('dummy_path', 'DONE')
+        mock_file().write.assert_any_call('(condition: DONE)\n')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='(condition: BACKLOG)\n')
+    def test_conditions(self, mock_file):
+        with patch('builtins.print') as mock_print:
+            manager_accessablty.conditions()
+            mock_print.assert_any_call('(condition: BACKLOG)')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='employee username: user\nemployee password: DISABLED\n')
+    def test_disable_employee(self, mock_file):
+        with patch('builtins.input', side_effect=['user']):
+            with patch('time.sleep', return_value=None):
+                manager_accessablty.disable_employee()
+                mock_file().write.assert_any_call('employee password: DISABLED\n')
+
+    @patch('builtins.open', new_callable=mock_open, read_data='employee username: user\nemployee password: DISABLED\n')
+    def test_enable_employee(self, mock_file):
+        with patch('builtins.input', side_effect=['user', 'newpassword']):
+            with patch('time.sleep', return_value=None):
+                manager_accessablty.enable_employee()
+                mock_file().write.assert_any_call('employee password: newpassword\n')
+
+if __name__ == '__main__':
+    unittest.main()
