@@ -1,0 +1,102 @@
+import os
+import time
+import manager_accessablty
+import new_project_maker
+import view_projects
+import edit_projects
+
+login = False
+
+import os
+
+def check_files(folder_path):
+    done = True
+    for file in os.listdir(folder_path):
+        if file.endswith(".txt"):
+            file_path = os.path.join(folder_path, file)
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+                if lines[-1].strip() != "(done)":
+                    done = False
+                    break
+    if done:
+        return "done"
+    else:
+        return "not done"
+
+def manage_managers():
+    # Get the current directory path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "managers.txt")
+
+    def create_file_if_not_exists():
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as file:
+                pass
+
+    def log_in():
+        global username
+        username = input("Enter your username: ")
+        time.sleep(0.5)
+        password = input("Enter your password: ")
+        time.sleep(0.5)
+
+        with open(file_path, "r") as file:
+            data = file.readlines()
+            for line in range(0, len(data), 2):
+                if "manager username: " + username + "\n" == data[line] and "manager password: " + password + "\n" == data[line + 1]:
+                    print("Login successful!")
+                    time.sleep(0.5)
+                    global login
+                    login = True
+                    return
+            print("Invalid username or password. Please try again.")
+            time.sleep(0.5)
+
+    def main():
+        create_file_if_not_exists()
+        choice = choice1 = 0
+        while True:
+            choice = input("Choose an option:\n1. Log In\n2. Exit\n")
+            time.sleep(0.5)
+
+            if choice == "1":
+                log_in()
+                if(login):
+                    print("\nHi Manager!")
+                    while True:
+                        choice1 = int(input("What do you want to do:\n1. Disable Employee Account\n2. Enable Employee Account\n3. Make New Project\n4. View All Projects\n5. Editing Projects\n6. Deleting the hole details\n7. checking the conditions of the projects\n8. Exit\n"))
+                        if choice1 == 1:
+                            manager_accessablty.disable_employee()
+                        elif choice1 == 2:
+                            manager_accessablty.enable_employee()
+                        elif choice1 == 3:
+                            new_project_maker.main()
+                        elif choice1 == 4:
+                            view_projects.main()
+                        elif choice1 == 5:
+                            edit_projects.main()
+                        elif choice1 == 6:
+                            check = int(input("ARE YOU SURE YOU WANT TO DELETE THE WOLE DETAILS????\n1. YES     2.NO\n"))
+                            if check == 1:
+                                manager_accessablty.clear_txt_files(r"C:\Users\A_S\OneDrive\Desktop\manager")
+                            else:
+                                print("nothing happened")
+                        elif choice1 == 7:
+                            manager_accessablty.conditions()
+                        elif choice1 == 8:
+                            print("Exiting...")
+                            time.sleep(0.5)
+                            exit()
+                        else:
+                            print("Invalid choice. Please try again.")
+                else:
+                    log_in()
+            elif choice == "2":
+                print("Exiting...")
+                time.sleep(0.5)
+                exit()
+            else:
+                print("Invalid choice. Please try again.")
+                time.sleep(0.5)
+    main()
